@@ -1,0 +1,302 @@
+# -*- coding: utf-8 -*-
+from math import sin,cos
+from math import pi
+#import tkinter as tk
+from tkinter import *
+import datetime
+
+class Analoguhr():
+
+	# Diese Uhr speichert ihre eigene Zeit in drei Variablen:
+	stunde = 0
+	minute = 0
+	sekunde = 0
+	
+	r = 101 # Radius des Zifferblattes festlegen
+	
+	""" Wenn tick() aufgerufen wird, dann wird diese Uhr veranlasst, ihre eigene Zeit 
+	 um eine Sekunde weiterzuzaehlen. Anschliessend zeichnet sie sich neu. 
+	 Damit sie funktinoiert, muss also ein anderes Objekt regelmäßig die 
+	 tick-Methode der Uhr aufrufen. 
+	 So wird die Kommunikation zwischen Objekten genutzt. """
+	def tick(self):
+		#print("Hier ist tick")
+		# Eine Sekunde weiterzaehlen
+		self.sekunde += 1
+		if (self.sekunde == 60):
+			# Wenn Minute voll, dann Sekunde wieder auf 0 stellen und Minute erhoehen
+			self.sekunde=0
+			self.minute += 1
+			if (self.minute == 60):
+				# Wenn Stunde voll, dann Minute wieder auf 0 stellen und Stunde erhoehen
+				self.minute=0
+				self.stunde += 1
+				if (self.stunde == 24):
+					# Wenn Tag voll, dann wieder bei 0 anfangen
+					self.stunde=0
+		# Die neue Uhrzeit darstellen
+		self.zeichnen()
+
+
+	def stellen(self,stunde,minute,sekunde):
+		self.stunde = stunde
+		self.minute = minute
+		self.sekunde = sekunde
+		
+
+	def zeichnen(self):
+		#print("Zeichnen (Beginn):   h=" + str(self.stunde) + " m=" + str(self.minute) + " s=" + str(self.sekunde))
+		
+		# Alles loeschen, was zuvor gezeichnet wurde:
+		self.canvas.delete("all")
+		
+		# Koordinaten der Mitte des Ziffernblattes
+		x0 = self.r
+		y0 = self.r
+
+		# Kreis zeichnen
+		# Der Kreis um die Uhr soll etwas kleiner sein, damit er nicht an den 
+		# Rand des Canvas stoesst, deshalb der Faktor 0.98
+		r_kreis = 0.98 * self.r 
+		self.canvas.create_oval(x0-r_kreis, y0-r_kreis, x0+r_kreis, y0+r_kreis)
+
+		# 12 Striche fuer die Stundenmarkierungen auf dem Zifferblatt zeichnen:
+		for i in [0,1,2,3,4,5,6,7,8,9,10,11]:
+			
+			""" 1. Der Winkel der Uhr laeuft rechts herum, aber der mathematische Winkel 
+			       wird links herum gezaehlt. Deshalb muss i zu -i werden.
+			    2. Der mathematische Winkel 0 Grad liegt bei 3 Uhr, deshalb muss die Stunde 
+			       um 3 korrigiert werden. 
+			 Beides zusammen fuehrt zu diesem Winkel: """
+			winkel = (-i + 3) * 2*pi/12
+			
+			# Berechne die x- und y-Koordinate auf dem Einheitskreis
+			xi = cos(winkel)
+			yi = sin(winkel)
+			
+			# Die Stundenmarkierungen sollen bei 90% des Ziffernballt-Radius anfangen und 
+			# bei 100% des Radius aufhoeren. Berechne die Koordinaten dazu:
+			# Anfangspunkt der Markierung:
+			xa = x0 + 0.90*xi * r_kreis
+			ya = y0 - 0.90*yi * r_kreis # Minus, weil die Y-Achse auf dem Bildschirm von oben nach unten laeuft
+			# Endpunkt der Markierung:
+			xb = x0 + 1.00*xi * r_kreis
+			yb = y0 - 1.00*yi * r_kreis # Minus, weil die Y-Achse auf dem Bildschirm von oben nach unten laeuft
+			#print(xi,yi,xa,ya,xb,yb)
+
+			# Zeichne die Striche:
+			self.canvas.create_line(xa,ya,xb,yb, width=5)
+			
+		# Stundenzeiger zeichnen
+		# Die Stunde muss um den Anteil der Minuten erhoeht werden:
+		stunde_korr = self.stunde + self.minute*1/60
+		#print("self.stunde=" + str(self.stunde) + " stunde_korr=" + str(stunde_korr))
+		winkel = (-stunde_korr + 3) * 2*pi/12
+		# Berechne die x- und y-Koordinate auf dem Einheitskreis
+		xi = cos(winkel)
+		yi = sin(winkel)
+		# Die Startkoordinaten des Stundenzeigers sind im Mittelpunkt des Zifferblattes:
+		xa = x0
+		ya = y0
+		# Die Endkoordinaten des Stundenzeigers: 
+		xb = x0 + 0.60*xi*r_kreis
+		yb = y0 - 0.60*yi*r_kreis
+		# Zeichnen:
+		self.canvas.create_line(xa,ya,xb,yb, width=5)
+		
+		# Minutenzeiger zeichnen
+		# Die Minute muss um den Anteil der Sekunden erhoeht werden:
+		minute_korr = self.minute + self.sekunde*1/60
+		winkel = (-minute_korr + 15) * 2*pi/60
+		# Berechne die x- und y-Koordinate auf dem Einheitskreis
+		xi = cos(winkel)
+		yi = sin(winkel)
+		# Die Startkoordinaten des Stundenzeigers sind im Mittelpunkt des Zifferblattes:
+		xa = x0
+		ya = y0
+		# Die Endkoordinaten des Stundenzeigers: 
+		xb = x0 + 0.85*xi*r_kreis
+		yb = y0 - 0.85*yi*r_kreis
+		# Zeichnen:
+		self.canvas.create_line(xa,ya,xb,yb, width=5)
+			
+		# Sekundenzeiger zeichnen
+		winkel = (-self.sekunde + 15) * 2*pi/60
+		# Berechne die x- und y-Koordinate auf dem Einheitskreis
+		xi = cos(winkel)
+		yi = sin(winkel)
+		# Die Startkoordinaten des Stundenzeigers sind im Mittelpunkt des Zifferblattes:
+		xa = x0
+		ya = y0
+		# Die Endkoordinaten des Stundenzeigers: 
+		xb = x0 + 0.85*xi*r_kreis
+		yb = y0 - 0.85*yi*r_kreis
+		# Zeichnen:
+		self.canvas.create_line(xa,ya,xb,yb, width=3, fill="red")
+		
+		#print("Zeichnen (Ende):     h=" + str(self.stunde) + " m=" + str(self.minute) + " s=" + str(self.sekunde))
+		
+	def h_plus(self):
+		self.stunde += 1
+		if self.stunde > 23:
+			self.stunde = 0
+		self.zeichnen()
+		
+	def h_minus(self):
+		self.stunde -= 1
+		if self.stunde < 0:
+			self.stunde = 23
+		self.zeichnen()
+		
+	def m_plus(self):
+		self.minute += 1
+		if self.minute > 59:
+			self.minute = 0
+			self.stunde += 1
+			if self.stunde > 23:
+				self.stunde = 0
+		self.zeichnen()
+		
+	def m_minus(self):
+		self.minute -= 1
+		if self.minute < 0:
+			self.minute = 59
+			self.stunde -= 1
+			if self.stunde < 0:
+				self.stunde = 23
+		self.zeichnen()
+		
+	def s_plus(self):
+		self.sekunde += 1
+		if self.sekunde > 59:
+			self.sekunde = 0
+			self.minute += 1
+			if self.minute > 59:
+				self.minute = 0
+				self.stunde += 1
+				if self.stunde > 23:
+					self.stunde = 0
+		self.zeichnen()
+		
+	def s_minus(self):
+		self.sekunde -= 1
+		if self.sekunde < 0:
+			self.sekunde = 59
+			self.minute -= 1
+			if self.minute < 0:
+				self.minute = 59
+				self.stunde -= 1
+				if self.stunde < 0:
+					self.stunde = 23
+		self.zeichnen()
+		
+	def uhr_loeschen(self):
+		# Uhr aus der Liste der registrierten Uhren im Ticker entfernen
+		ticker.remove_uhr(self)
+		# Fenster der Uhr löschen
+		self.window.destroy()
+		# Uhrenobjekt löschen
+		self.delete()
+		
+	def __init__(self):
+		# Ein neues Fenster fuer diese Uhr erzeugen
+		self.window = Tk()
+		
+		Button(self.window, text="h+", command=self.h_plus).grid(row=0,column=0,sticky=E)
+		Button(self.window, text="h-", command=self.h_minus).grid(row=0,column=1,sticky=W)
+		Button(self.window, text="m+", command=self.m_plus).grid(row=0,column=2,sticky=E)
+		Button(self.window, text="m-", command=self.m_minus).grid(row=0,column=3,sticky=W)
+		Button(self.window, text="s+", command=self.s_plus).grid(row=0,column=4,sticky=E)
+		Button(self.window, text="s-", command=self.s_minus).grid(row=0,column=5,sticky=W)
+
+		Button(self.window, text="Uhr löschen", command=self.uhr_loeschen).grid(row=2,column=0,columnspan=6)
+
+		#Button (self.window,text="Tick",command=self.tick).grid(row=0,column=7)
+		
+		# Einen canvas zum Zeichnen darauf erzeugen
+		self.canvas = Canvas(self.window,width=2*self.r,height=2*self.r, bg="white")
+		#self.canvas = Canvas(self.window,back="#3f7")
+		#self.canvas.pack()
+		self.canvas.grid(row=1,column=0,columnspan=6)
+		
+		# Uhr einmal zeichnen
+		self.zeichnen()
+		
+
+class Ticker():
+	
+	blink_status = 0
+	
+	""" Der Ticker merkt sich in einer Liste alle Uhren, denen er sekündlich 
+	einen Tick senden soll """
+	uhren = []
+	
+	def add_uhr(self,uhr):
+		self.uhren.append(uhr)
+		
+	def remove_uhr(self,uhr):
+		self.uhren.remove(uhr)
+		
+	def timer_abgelaufen(self):
+		
+		# Zeige Blinksignal an
+		if self.blink_text.get() == "o":
+			self.blink_text.set("O")
+		else:
+			self.blink_text.set("o")
+		
+		# Gehe alle bekannten Uhren durch und rufe tick() auf:
+		for uhr in self.uhren:
+			uhr.tick()
+			
+		# Rufe mich selbst nach 1000 msec wieder auf
+		self.window.after(1000,self.timer_abgelaufen)
+	
+	
+	def auf_systemzeit_stellen(self):
+		
+		# Hole die aktuelle Systemzeit
+		systemzeit = datetime.datetime.now().time()
+		h = systemzeit.hour
+		m = systemzeit.minute
+		s = systemzeit.second
+		
+		# Alle registrierten Uhren durchlaufen und Zeit einstellen
+		for uhr in self.uhren:
+			uhr.stellen(h,m,s)
+	
+	def neue_analoguhr(self):
+		# Ein neuen Analoguhr-Objekt erzeugt:
+		uhr = Analoguhr()
+		# Objekt in die Liste der registrierten Uhren einfügen:
+		self.add_uhr(uhr)
+		
+		
+		
+	def __init__(self):
+		self.window = Tk()
+		self.window.wm_title("Ticker")
+	
+		self.blink_text = StringVar()
+		Label(self.window, textvariable=self.blink_text).pack()
+		
+		self.b1 = Button(self.window, text="Uhren auf Systemzeit stellen", command=self.auf_systemzeit_stellen)
+		self.b1.pack()
+		
+		self.b2 = Button(self.window, text="Neue Analoguhr", command=self.neue_analoguhr)
+		self.b2.pack()
+		
+
+
+""" Es wird ein Ticker benötigt, der alle Uhren im Sekundentakt benachrichtigt, 
+wenn eine Sekunde abgelaufen ist: """
+ticker = Ticker()
+
+# Erzeuge eine Analoguhr und registriere sie beim Ticker:
+uhr1 = Analoguhr()
+ticker.add_uhr(uhr1)
+
+# Stoße den Ticker einmal an (danach stößt er sich immer wieder selbst an):
+ticker.timer_abgelaufen()
+
+mainloop()
